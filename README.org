@@ -1,0 +1,35 @@
+* tfLayer
+  a set of layers written in tensorflow with special hierarchy for easy modifying model.
+
+#+BEGIN_SRC python
+class Layer:
+    def __init__(self, scope, reuse, input_size=None):
+        self._scope = scope
+        self._reuse = reuse
+        self.input_size = input_size
+        self.build = False
+
+    def call(self, x):
+        raise NotImplementedError("call not implemented")
+
+    def prehook(self, x):
+        self.input_size = x[0].get_shape().as_list()[-1]
+        return x
+
+    def posthook(self, x, y):
+        return y
+
+    def _build(self):
+        pass
+
+    def __call__(self, *x):
+        with tf.variable_scope(self._scope, reuse=self._reuse):
+            x = self.prehook(x)
+            if not self.build:
+                self._build()
+                self.build = True
+
+            y = self.call(*x)
+            return self.posthook(x, y)
+
+#+END_SRC
